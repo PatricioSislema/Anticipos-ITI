@@ -1,0 +1,17 @@
+# Backend
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.log
+
+# Frontend
+node_modules/
+dist/
+build/
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
