@@ -22,15 +22,15 @@ class UsuarioServiceTest {
     void loginConCredencialesCorrectas() {
         // Preparar
         LoginRequestDTO dto = new LoginRequestDTO();
-        dto.setCorreo("hector.sislema@iti.edu.ec");
-        dto.setContrasena("123456");
+        dto.setCorreo("kurtsislema@hotmail.com");
+        dto.setContrasena("87654321");
 
         // Ejecutar
         LoginResponseDTO response = usuarioService.login(dto);
 
         // Verificar
         assertTrue(response.isAutenticado());
-        assertEquals("Héctor Sislema", response.getNombre());
+        assertEquals("Javier Sandoval", response.getNombre());
         assertEquals("Funcionario", response.getRolNombre());
     }
 

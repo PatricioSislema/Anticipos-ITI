@@ -27,6 +27,46 @@ public class OpenAIService {
         if (mensaje != null && mensaje.trim().matches("\\d+")) {
             return "DESCONOCIDA";
         }
+
+        String mensajeLower = mensaje.toLowerCase().trim();
+
+        // ✅ DETECCIÓN DIRECTA DE PREGUNTAS GENERALES (sin IA)
+        if (mensajeLower.contains("capital")
+                || mensajeLower.contains("quién")
+                || mensajeLower.contains("quien")
+                || mensajeLower.contains("qué es")
+                || mensajeLower.contains("que es")
+                || mensajeLower.contains("cómo ")
+                || mensajeLower.contains("como ")
+                || mensajeLower.contains("cuál")
+                || mensajeLower.contains("cual ")
+                || mensajeLower.contains("dónde")
+                || mensajeLower.contains("donde")
+                || mensajeLower.contains("cuándo")
+                || mensajeLower.contains("cuando")
+                || mensajeLower.contains("por qué")
+                || mensajeLower.contains("porque")
+                || mensajeLower.contains("hora")
+                || mensajeLower.contains("fecha")
+                || mensajeLower.contains("clima")
+                || mensajeLower.endsWith("?")) {
+            System.out.println("[IA] Detectada pregunta general (sin IA): " + mensaje);
+            return "CONSULTA_GENERAL";
+        }
+
+        // ✅ DETECCIÓN DIRECTA DE COMANDOS DE ANTICIPOS/LIQUIDACIONES
+        if (mensajeLower.contains("solicitar") || mensajeLower.contains("pedir")
+                || mensajeLower.contains("anticipo") || mensajeLower.contains("adelanto")
+                || mensajeLower.contains("quiero plata") || mensajeLower.contains("necesito plata")) {
+            return "SOLICITAR";
+        }
+
+        if (mensajeLower.contains("liquidar") || mensajeLower.contains("rendir")
+                || mensajeLower.contains("justificar") || mensajeLower.contains("cuentas")) {
+            return "LIQUIDAR";
+        }
+
+        // ✅ SI NO ES NINGUNA DE LAS ANTERIORES, USAR LA IA
         String prompt = """
             Eres un clasificador de intenciones para un chatbot del ITI.
             Analiza el mensaje del usuario y responde SOLO con UNA de estas palabras clave:
@@ -47,16 +87,36 @@ public class OpenAIService {
     }
 
     // ==========================================
-    // 2. RESPUESTA A CONSULTAS GENERALES
+    // 2. RESPUESTA A CONSULTAS GENERALES (CON IA)
     // ==========================================
     public String responderConsultaGeneral(String mensaje) {
-        return "🤔 Esa pregunta está fuera de mi alcance.\n\n" +
-                "📌 Soy un asistente especializado en la gestión de anticipos del ITI.\n\n" +
-                "Puedo ayudarte con:\n" +
-                "📝 Solicitar un anticipo\n" +
-                "💰 Liquidar un anticipo\n" +
-                "📋 Consultar el estado de tus trámites\n\n" +
-                "👉 Usa los botones para continuar.";
+        String prompt = """
+            Eres ITI, el asistente virtual del Instituto Tecnológico Internacional (ITI).
+            Tu especialidad es gestionar anticipos y liquidaciones de fondos del ITI.
+            
+            El usuario te ha hecho esta pregunta: "%s"
+            
+            REGLAS:
+            1. Si la pregunta es sobre anticipos, liquidaciones, trámites o el ITI, responde de forma útil y breve.
+            2. Si la pregunta es GENERAL (ej: capital de Ecuador, hora, quién eres, etc.), responde con la respuesta correcta de forma breve (máximo 2 líneas).
+            3. Si la pregunta no tiene sentido, responde amablemente.
+            4. NO uses Markdown (solo texto plano con emojis).
+            5. NUNCA digas "no soy programado para responder preguntas generales". Siempre responde algo útil.
+            6. NO agregues recordatorios del ITI en la respuesta (el sistema lo hará automáticamente cada 5 mensajes).
+            
+            Respuesta:
+            """.formatted(mensaje);
+
+        try {
+            String respuesta = chatClient.prompt().user(prompt).call().content().trim();
+            System.out.println("[IA] Respuesta general: " + respuesta);
+            return respuesta;
+        } catch (Exception e) {
+            System.err.println("[IA] Error al responder consulta general: " + e.getMessage());
+            return "🤔 Esa pregunta está fuera de mi alcance.\n\n" +
+                    "📌 Soy ITI, tu asistente para gestionar anticipos y liquidaciones de fondos.\n\n" +
+                    "👉 Usa los botones para continuar.";
+        }
     }
 
     public String interpretarMensaje(String mensaje) {

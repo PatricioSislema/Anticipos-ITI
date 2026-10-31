@@ -85,9 +85,31 @@ public class SesionUsuario {
     // Variable para guardar el trámite al que el usuario quiere ir tras loguearse
     private Long tramiteRedirigido;
 
+    // Contador de mensajes para recordar la finalidad
+    private int contadorMensajes = 0;
+
+    // Bandera para saber si ya se mostró el recordatorio recientemente
+    private boolean recordatorioMostrado = false;
+
     public SesionUsuario() {
         this.autenticado = false;
         this.esperandoContrasena = false;
         this.ultimaActividad = LocalDateTime.now();
+    }
+
+    // ✅ NUEVO: Incrementar contador de mensajes
+    public void incrementarContador() {
+        this.contadorMensajes++;
+    }
+
+    // Resetear contador
+    public void resetearContador() {
+        this.contadorMensajes = 0;
+        this.recordatorioMostrado = false;
+    }
+
+    // Verificar si debe mostrar el recordatorio (cada 5 mensajes)
+    public boolean debeMostrarRecordatorio() {
+        return this.contadorMensajes > 0 && this.contadorMensajes % 5 == 0 && !this.recordatorioMostrado;
     }
 }

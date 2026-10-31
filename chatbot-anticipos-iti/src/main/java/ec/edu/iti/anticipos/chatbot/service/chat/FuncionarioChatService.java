@@ -929,6 +929,7 @@ public class FuncionarioChatService {
 
     private boolean tieneLiquidacionesPendientes(Long usuarioId) {
         try {
+            // ✅ Buscar solo trámites de tipo "Liquidación de Anticipo"
             List<String> estadosPendientes = List.of(
                     "Liquidación en proceso",
                     "Liquidación revisada",
@@ -936,8 +937,17 @@ public class FuncionarioChatService {
                     "Devuelto al funcionario"
             );
 
+            // Usar el repositorio para buscar por usuario y estados, pero filtrando por tipo
             List<Tramite> pendientes = tramiteRepository.buscarPorUsuarioYEstados(usuarioId, estadosPendientes);
-            return !pendientes.isEmpty();
+
+            // ✅ Filtrar solo los que sean de tipo "Liquidación de Anticipo"
+            List<Tramite> liquidacionesPendientes = pendientes.stream()
+                    .filter(t -> t.getTipoTramite() != null
+                            && t.getTipoTramite().getNombre().contains("Liquidación"))
+                    .toList();
+
+            System.out.println(">>> Liquidaciones pendientes reales para usuario " + usuarioId + ": " + liquidacionesPendientes.size());
+            return !liquidacionesPendientes.isEmpty();
         } catch (Exception e) {
             System.err.println("Error al verificar liquidaciones pendientes: " + e.getMessage());
             return false;

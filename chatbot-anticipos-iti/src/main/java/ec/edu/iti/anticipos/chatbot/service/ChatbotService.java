@@ -69,6 +69,14 @@ public class ChatbotService {
         }
 
         sesion.setUltimaActividad(LocalDateTime.now());
+        sesion.incrementarContador();
+
+        // Verificar si debe mostrar el recordatorio (cada 5 mensajes)
+        boolean mostrarRecordatorio = sesion.debeMostrarRecordatorio();
+        if (mostrarRecordatorio) {
+            sesion.setRecordatorioMostrado(true);
+            System.out.println(">>> Recordatorio de finalidad (contador: " + sesion.getContadorMensajes() + ")");
+        }
 
         if (sesion.isAutenticado() && sesion.isEsperandoNuevaContrasena()) {
             String nuevaContrasena = mensaje.trim();
@@ -186,15 +194,41 @@ public class ChatbotService {
                 System.out.println("[IA] Mensaje: [" + mensaje + "] → Intención: " + intencion);
 
                 switch (intencion) {
-                    case "SOLICITAR": mensajeLower = "solicitar"; mensaje = "solicitar"; break;
-                    case "LIQUIDAR": mensajeLower = "liquidar"; mensaje = "liquidar"; break;
-                    case "CONSULTAR": mensajeLower = "estado"; mensaje = "estado"; break;
-                    case "AYUDA": mensajeLower = "ayuda"; mensaje = "ayuda"; break;
-                    case "SALIR": mensajeLower = "salir"; mensaje = "salir"; break;
-                    case "MENU": mensajeLower = "menu"; mensaje = "menu"; break;
-                    case "CANCELAR": mensajeLower = "cancelar"; mensaje = "cancelar"; break;
-                    case "CONSULTA_GENERAL": return mensajeFueraDeAlcance(sesion);
-                    case "DESCONOCIDA": return mensajeFueraDeAlcance(sesion);
+                    case "SOLICITAR":
+                        // ✅ NUEVO: Guiar paso a paso con confirmación
+                        return "📝 *¡Perfecto! Veo que quieres solicitar un anticipo.*\n\n" +
+                                "Para continuar, necesito que subas el formulario de solicitud en formato PDF (ya llenado y firmado).\n\n" +
+                                "👉 Adjúntalo en este chat cuando esté listo.";
+                    case "LIQUIDAR":
+                        // ✅ NUEVO: Guiar paso a paso con confirmación
+                        return "💰 *¡Perfecto! Veo que quieres liquidar un anticipo.*\n\n" +
+                                "Para continuar, necesito que subas el formulario de liquidación en formato PDF.\n\n" +
+                                "👉 Adjúntalo en este chat cuando esté listo.";
+                    case "CONSULTAR":
+                        mensajeLower = "estado";
+                        mensaje = "estado";
+                        break;
+                    case "AYUDA":
+                        mensajeLower = "ayuda";
+                        mensaje = "ayuda";
+                        break;
+                    case "SALIR":
+                        mensajeLower = "salir";
+                        mensaje = "salir";
+                        break;
+                    case "MENU":
+                        mensajeLower = "menu";
+                        mensaje = "menu";
+                        break;
+                    case "CANCELAR":
+                        mensajeLower = "cancelar";
+                        mensaje = "cancelar";
+                        break;
+                    case "CONSULTA_GENERAL":
+                        // ✅ NUEVO: Usar la IA para responder preguntas generales
+                        return openAIService.responderConsultaGeneral(mensaje);
+                    case "DESCONOCIDA":
+                        return openAIService.responderConsultaGeneral(mensaje);
                 }
             }
         }
@@ -284,6 +318,7 @@ public class ChatbotService {
 
         return delegarPorRol(mensaje, mensajeLower, sesion, chatId);
     }
+
 
     // ============================================================
     // PROCESAR MENSAJE CON BOTONES
@@ -795,6 +830,17 @@ public class ChatbotService {
 
         String texto = procesarMensaje(mensaje, chatId);
         SesionUsuario sesion = sesiones.get(chatId);
+
+        // Agregar recordatorio si es necesario (cada 5 mensajes)
+        SesionUsuario sesionActual = sesiones.get(chatId);
+        if (sesionActual != null && sesionActual.isAutenticado()
+                && sesionActual.getAccionPendiente() == null
+                && !sesionActual.isSubiendoFacturas()
+                && !sesionActual.isEsperandoComprobanteDevolucion()
+                && sesionActual.getContadorMensajes() > 0
+                && sesionActual.getContadorMensajes() % 5 == 0) {
+            texto += "\n\n💡 *Recuerda:* Soy ITI, tu asistente para gestionar anticipos y liquidaciones de fondos del ITI.";
+        }
         if (sesion == null) return new ResponseBot(texto);
 
         List<List<ResponseBot.Boton>> botones = new ArrayList<>();
